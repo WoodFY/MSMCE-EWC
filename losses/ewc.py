@@ -20,12 +20,10 @@ class EWC(nn.Module):
         Compute the EWC (Elastic Weights Consolidation) regularization loss for all past tasks.
 
         Args:
-            named_params: generator
-                A generator that returns the name and parameters of the model.
+            named_params (generator): A generator that returns the name and parameters of the model.
 
         Returns:
-            ewc_loss: torch.Tensor
-                The EWC regularization loss based on fisher information and past optimal parameters.
+            ewc_loss (torch.Tensor): The EWC regularization loss based on fisher information and past optimal parameters.
         """
         ewc_loss = torch.tensor(0.0).to(self.args.device)
 
@@ -44,16 +42,11 @@ class EWC(nn.Module):
         Update the Fisher Information Matrix and optimal parameters for the current task.
 
         Args：
-            model: nn.Module
-                The model to compute Fisher Information Matrix and optimal parameters.
-            current_task_id: int
-                The current task iteration index.
-            data_loader: DataLoader
-                The data loader for the current task.
-            sample_size: int
-                Number of samples to estimate Fisher Information Matrix.
-            consolidate: bool
-                Whether to consolidate the Fisher Information Matrix and optimal parameters for the current task.
+            model (nn.Module): The model to compute Fisher Information Matrix and optimal parameters.
+            current_task_id (int): The current task iteration index.
+            data_loader (DataLoader): The data loader for the current task.
+            sample_size (int): Number of samples to estimate Fisher Information Matrix.
+            consolidate (bool): Whether to consolidate the Fisher Information Matrix and optimal parameters for the current task.
         """
         if consolidate:
             # if mode is online, only store the current task id
