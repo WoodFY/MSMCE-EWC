@@ -1,7 +1,9 @@
 import torch
 from torch.utils.data import DataLoader
 
+import os
 import numpy as np
+
 from tqdm import tqdm
 
 from utils.metrics import compute_precision, compute_recall, compute_f1
@@ -9,7 +11,7 @@ from utils.metrics import compute_precision, compute_recall, compute_f1
 
 def train_cumulative(
         args, model, tasks, criterion, optimizer, ewc_regularizer, scheduler, early_stopping,
-        fisher_estimate_sample_size=1024,consolidate=True, is_early_stopping=False, is_metric_visualization=True
+        fisher_estimate_sample_size=1024,consolidate=True, is_early_stopping=False, is_metrics_visualization=True
 ):
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     # criterion = nn.CrossEntropyLoss()
@@ -31,6 +33,7 @@ def train_cumulative(
         test_loader = DataLoader(test_dataset, batch_size=task_batch_size, shuffle=False)
 
         iterations_per_epoch = (len(train_dataset) + task_batch_size -1) // task_batch_size
+        min_loss = np.inf
 
         for epoch in range(1, task_epochs + 1):
             model.train()
@@ -121,7 +124,20 @@ def train_cumulative(
             scheduler.step(epoch_valid_loss)
 
             if is_early_stopping:
-                pass
+                early_stopping(epoch_valid_loss, model, save_model_dir=args.exp_dir, save_model_path='checkpoint.pth')
+                if early_stopping.early_stop:
+                    print('Early Stopping.')
+
+                    if is_metrics_visualization:
+                        pass
+
+                    break
+            else:
+                save_model_path = os.path.join(args.exp_dir, 'checkpoint.pth')
+
+                if epoch_valid_loss < min_loss:
+                    min_loss = epoch_valid_loss
+                    torch.save(model.state_dict(), save_model_path)
 
         if consolidate and task_id < len(tasks):
             ewc_regularizer.update_fisher_optimal(
@@ -132,7 +148,7 @@ def train_cumulative(
                 consolidate=True
             )
 
-        if is_metric_visualization:
+        if is_metrics_visualization:
             pass
 
 
@@ -170,11 +186,11 @@ def test(args, model, test_loader, criterion, is_metrics_visualization=True):
     test_precision = compute_precision(all_labels, all_predicts)
     test_recall = compute_recall(all_labels, all_predicts)
     test_f1 = compute_f1(all_labels, all_predicts)
-    print('=======================================================')
+    print('==========================================================================================')
     print('Test Loss: {:.4f} | Test Acc: {:.4f}'.format(test_loss, test_accuracy))
     print('Test Precision: {:.4f} | Test Recall (Sensitivity): :{:.4f} | Test F1: {:.4f}'.format(
         test_precision, test_recall, test_f1))
-    print('=======================================================')
+    print('==========================================================================================')
 
     if is_metrics_visualization:
         pass
