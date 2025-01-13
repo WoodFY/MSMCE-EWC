@@ -22,18 +22,21 @@ def train_cumulative(
         for t in tasks
     ]
 
-    for task_id, (train_dataset, test_dataset, task_epochs, task_batch_size, input_dim, output_dim) in enumerate(tasks, 1):
+    for task_id, task in enumerate(tasks, 1):
         print(f"Training Task {task_id}/{len(tasks)}...")
 
-        model.set_input_output(input_dim, output_dim)
-        model = model.to(args.device)
+        train_loader = task.train_loader
+        valid_loader = task.valid_loader
+        test_loader = task.test_loader
 
-        train_loader = DataLoader(train_dataset, batch_size=task_batch_size, shuffle=True)
-        valid_loader = None
-        test_loader = DataLoader(test_dataset, batch_size=task_batch_size, shuffle=False)
+        task_epochs = task.task_epochs
+        task_batch_size = task.task_batch_size
 
-        iterations_per_epoch = (len(train_dataset) + task_batch_size -1) // task_batch_size
+        iterations_per_epoch = (len(train_loader.dataset) + task_batch_size - 1) // task_batch_size
         min_loss = np.inf
+
+        model.set_input_output(task.input_dim, task.output_dim)
+        model = model.to(args.device)
 
         for epoch in range(1, task_epochs + 1):
             model.train()
@@ -189,7 +192,8 @@ def test(args, model, test_loader, criterion, is_metrics_visualization=True):
     print('==========================================================================================')
     print('Test Loss: {:.4f} | Test Acc: {:.4f}'.format(test_loss, test_accuracy))
     print('Test Precision: {:.4f} | Test Recall (Sensitivity): :{:.4f} | Test F1: {:.4f}'.format(
-        test_precision, test_recall, test_f1))
+        test_precision, test_recall, test_f1
+    ))
     print('==========================================================================================')
 
     if is_metrics_visualization:
